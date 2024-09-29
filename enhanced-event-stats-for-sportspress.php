@@ -72,6 +72,8 @@ function eessp_event_templates( $templates = array() ) {
  * @return void
  */
 function output_eessp_form_guide() {
+	// Get timelines format option
+	$format = get_option( 'eessp_event_showing_format', 'list' );
 	$event_id = get_the_ID();
 	$teams = get_post_meta( $event_id,'sp_team' );
 	$leagues = sp_get_leagues( $event_id );
@@ -79,19 +81,33 @@ function output_eessp_form_guide() {
 	$event_date = get_the_date( 'Y-m-d', $event_id );
 	
 	foreach ( $teams as $team ) {
-		sp_get_template( 'event-list.php', array(
-			'title' => get_the_title( $team ),
-			'show_title' => true,
-			'team' => $team,
-			'league' => reset( $leagues ),
-			'season' => reset( $seasons ),
-			'status' => 'publish',
-			'date_before' => $event_date, //Not working...
-			'title_format' => 'homeaway',
-			'time_format' => 'separate',
-			'columns' => apply_filters( 'eessp_form_guide_columns', array( 'event', 'time', 'results' ) ),
-			'order' => 'DESC',
-			'hide_if_empty' => true,
-		) );
+		if ( 'list' === $format ) {
+			sp_get_template( 'event-list.php', array(
+				'title' => get_the_title( $team ),
+				'show_title' => true,
+				'team' => $team,
+				'league' => reset( $leagues ),
+				'season' => reset( $seasons ),
+				'status' => 'publish',
+				'date_before' => $event_date, //Not working...
+				'title_format' => 'homeaway',
+				'time_format' => 'separate',
+				'columns' => apply_filters( 'eessp_form_guide_columns', array( 'event', 'time', 'results' ) ),
+				'order' => 'DESC',
+				'hide_if_empty' => true,
+			) );
+		}else{
+			sp_get_template( 'event-blocks.php', array(
+				'title' => get_the_title( $team ),
+				'show_title' => true,
+				'team' => $team,
+				'league' => reset( $leagues ),
+				'season' => reset( $seasons ),
+				'status' => 'publish',
+				'date_before' => $event_date, //Not working...
+				'order' => 'DESC',
+				'hide_if_empty' => true,
+			) );
+		}
 	}
 }
