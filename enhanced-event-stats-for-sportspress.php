@@ -72,13 +72,21 @@ function eessp_event_templates( $templates = array() ) {
  * @return void
  */
 function output_eessp_form_guide() {
-	$teams = get_post_meta( get_the_ID(),'sp_team' );
+	$event_id = get_the_ID();
+	$teams = get_post_meta( $event_id,'sp_team' );
+	$leagues = sp_get_leagues( $event_id );
+	$seasons = sp_get_seasons( $event_id );
+	$event_date = get_the_date( 'Y-m-d', $event_id );
+	
 	foreach ( $teams as $team ) {
 		sp_get_template( 'event-list.php', array(
 			'title' => get_the_title( $team ),
 			'show_title' => true,
 			'team' => $team,
-			'date_before' => get_post_time('Y-m-d', true),
+			'league' => reset( $leagues ),
+			'season' => reset( $seasons ),
+			'status' => 'publish',
+			'date_before' => $event_date, //Not working...
 			'title_format' => 'homeaway',
 			'time_format' => 'separate',
 			'columns' => apply_filters( 'eessp_form_guide_columns', array( 'event', 'time', 'results' ) ),
