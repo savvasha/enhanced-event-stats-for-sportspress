@@ -59,7 +59,7 @@ function eessp_event_templates( $templates = array() ) {
 	$templates['eessp_form_guide'] = array(
 		'title'   => __( 'Form Guide', 'eessp' ),
 		'option'  => 'sportspress_event_show_eessp_form_guide',
-		'action'  => 'output_eessp_form_guide',
+		'action'  => 'eessp_output_form_guide',
 		'default' => 'yes',
 	);
 	return $templates;
@@ -71,7 +71,7 @@ function eessp_event_templates( $templates = array() ) {
  * @access public
  * @return void
  */
-function output_eessp_form_guide() {
+function eessp_output_form_guide() {
 	// Get timelines format option
 	$format = get_option( 'eessp_event_showing_format', 'list' );
 	$event_id = get_the_ID();
@@ -82,20 +82,20 @@ function output_eessp_form_guide() {
 	
 	foreach ( $teams as $team ) {
 		if ( 'list' === $format ) {
-			sp_get_template( 'event-list.php', array(
-				'title' => get_the_title( $team ),
-				'show_title' => true,
-				'team' => $team,
-				'league' => reset( $leagues ),
-				'season' => reset( $seasons ),
-				'status' => 'publish',
-				'date_before' => $event_date, //Not working...
-				'title_format' => 'homeaway',
-				'time_format' => 'separate',
-				'columns' => apply_filters( 'eessp_form_guide_columns', array( 'event', 'time', 'results' ) ),
-				'order' => 'DESC',
-				'hide_if_empty' => true,
-			) );
+			sp_get_template( 'eessp-event-list.php', array(
+				'title' 			 => get_the_title( $team ),
+				'show_title' 		 => true,
+				'team' 				 => $team,
+				'leagues' 			 => $leagues,
+				'seasons' 			 => $seasons,
+				'status' 			 => 'publish',
+				'current_event_date' => get_the_date( 'Y-m-d', $event_id ),
+				'title_format' 		 => 'homeaway',
+				'time_format' 		 => 'separate',
+				'columns' 			 => apply_filters( 'eessp_form_guide_columns', array( 'event', 'time', 'results' ) ),
+				'order' 			 => 'DESC',
+				'hide_if_empty' 	 => true,
+			), '', EESSP_PLUGIN_DIR . 'templates/' );
 		}else{
 			sp_get_template( 'event-blocks.php', array(
 				'title' => get_the_title( $team ),
