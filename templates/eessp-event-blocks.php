@@ -1,10 +1,10 @@
 <?php
 /**
- * Event Blocks
+ * EESSP Event Blocks
  *
- * @author      ThemeBoy
- * @package     SportsPress/Templates
- * @version   2.7.9
+ * @author      ThemeBoy/savvasha
+ * @package     EESSP/Templates
+ * @version     1.0 (based on SportsPress template version 2.7.9)
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -12,26 +12,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $defaults = array(
-	'id'                   => null,
-	'event'                => null,
+	'current_event_date'   => false,
 	'title'                => false,
-	'status'               => 'default',
+	'status'               => 'publish',
 	'format'               => 'default',
 	'date'                 => 'default',
-	'date_from'            => 'default',
-	'date_to'              => 'default',
-	'date_past'            => 'default',
-	'date_future'          => 'default',
-	'date_relative'        => 'default',
 	'day'                  => 'default',
-	'league'               => null,
-	'season'               => null,
+	'leagues'              => null,
+	'seasons'              => null,
 	'venue'                => null,
-	'team'                 => null,
-	'teams_past'           => null,
-	'date_before'          => null,
+	'team'                 => false,
 	'player'               => null,
-	'number'               => -1,
+	'number'               => get_option( 'eessp_form_guide_rows', 3 ),
 	'show_team_logo'       => get_option( 'sportspress_event_blocks_show_logos', 'yes' ) == 'yes' ? true : false,
 	'link_teams'           => get_option( 'sportspress_link_teams', 'no' ) == 'yes' ? true : false,
 	'link_events'          => get_option( 'sportspress_link_events', 'yes' ) == 'yes' ? true : false,
@@ -39,7 +31,7 @@ $defaults = array(
 	'rows'                 => get_option( 'sportspress_event_blocks_rows', 5 ),
 	'orderby'              => 'default',
 	'order'                => 'default',
-	'columns'              => null,
+	'columns'              => array(),
 	'show_all_events_link' => false,
 	'show_title'           => get_option( 'sportspress_event_blocks_show_title', 'no' ) == 'yes' ? true : false,
 	'show_league'          => get_option( 'sportspress_event_blocks_show_league', 'no' ) == 'yes' ? true : false,
@@ -51,67 +43,47 @@ $defaults = array(
 
 extract( $defaults, EXTR_SKIP );
 
-$calendar = new SP_Calendar( $id );
-
-if ( $status != 'default' ) {
-	$calendar->status = $status;
-}
-if ( $format != 'default' ) {
-	$calendar->event_format = $format;
-}
-if ( $date != 'default' ) {
-	$calendar->date = $date;
-}
-if ( $date_from != 'default' ) {
-	$calendar->from = $date_from;
-}
-if ( $date_to != 'default' ) {
-	$calendar->to = $date_to;
-}
-if ( $date_past != 'default' ) {
-	$calendar->past = $date_past;
-}
-if ( $date_future != 'default' ) {
-	$calendar->future = $date_future;
-}
-if ( $date_relative != 'default' ) {
-	$calendar->relative = $date_relative;
-}
-if ( $event ) {
-	$calendar->event = $event;
-}
-if ( $league ) {
-	$calendar->league = $league;
-}
-if ( $season ) {
-	$calendar->season = $season;
-}
-if ( $venue ) {
-	$calendar->venue = $venue;
-}
+$args = array(
+		'post_type'      => 'sp_event',
+		'posts_per_page' => $number,
+		'post_status'    => $status,
+		'order'          => 'DESC',
+		'meta_query'     => array(
+			'relation' => 'AND',
+		),
+		'tax_query'      => array(
+			'relation' => 'AND',
+		),
+	);
 if ( $team ) {
-	$calendar->team = $team;
+	$args['meta_query'][] = array(
+		'key'     => 'sp_team',
+		'value'   => array( $team ),
+		'compare' => 'IN',
+	);
 }
-if ( $teams_past ) {
-	$calendar->teams_past = $teams_past;
+if ( $current_event_date ) {
+	$args['date_query'] = array(
+		array(
+			'before'    => $current_event_date,
+			'inclusive' => false,
+		),
+	);
 }
-if ( $date_before ) {
-	$calendar->date_before = $date_before;
+if ( !is_null( $leagues ) ) {
+	$args['tax_query'][] = array(
+			'taxonomy' => 'sp_league',
+			'field'    => 'term_id',
+			'terms'    => $leagues,
+		);
 }
-if ( $player ) {
-	$calendar->player = $player;
+if ( !is_null( $seasons ) ) {
+	$args['tax_query'][] = array(
+			'taxonomy' => 'sp_season',
+			'field'    => 'term_id',
+			'terms'    => $seasons,
+		);
 }
-if ( $order != 'default' ) {
-	$calendar->order = $order;
-}
-if ( $orderby != 'default' ) {
-	$calendar->orderby = $orderby;
-}
-if ( $day != 'default' ) {
-	$calendar->day = $day;
-}
-$data       = $calendar->data();
-$usecolumns = $calendar->columns;
 
 if ( isset( $columns ) ) :
 	if ( is_array( $columns ) ) {
@@ -121,18 +93,8 @@ if ( isset( $columns ) ) :
 	}
 endif;
 
-if ( $hide_if_empty && empty( $data ) ) {
-	return false;
-}
-
-if ( $show_title && false === $title && $id ) :
-	$caption = $calendar->caption;
-	if ( $caption ) {
-		$title = $caption;
-	} else {
-		$title = get_the_title( $id );
-	}
-endif;
+// Get all events based on given args.
+$data = get_posts( $args );
 
 if ( $title ) {
 	echo '<h4 class="sp-table-caption">' . wp_kses_post( $title ) . '</h4>';
@@ -194,7 +156,7 @@ if ( $title ) {
 						endforeach;
 					endif;
 
-					if ( 'day' === $calendar->orderby ) :
+					if ( 'day' === $orderby ) :
 						$event_group = get_post_meta( $event->ID, 'sp_day', true );
 						if ( ! isset( $group ) || $event_group !== $group ) :
 							$group = $event_group;
@@ -206,7 +168,7 @@ if ( $title ) {
 						<td>
 							<?php do_action( 'sportspress_event_blocks_before', $event, $usecolumns ); ?>
 							<?php echo wp_kses_post( implode( ' ', $logos ) ); ?>
-							<time class="sp-event-date" datetime="<?php echo esc_attr( $event->post_date ); ?>" itemprop="startDate" content="<?php echo esc_attr( mysql2date( 'Y-m-d\TH:iP', $event->post_date ) ); ?>">
+							<time class="sp-event-date" datetime="<?php echo esc_attr( $event->post_date ); ?>" itemprop="startDate" content="<?php echo esc_attr( mysql2date( 'Y-m-d\TH:i:sP', $event->post_date ) ); ?>">
 								<?php echo wp_kses_post( sp_add_link( get_the_time( get_option( 'date_format' ), $event ), $permalink, $link_events ) ); ?>
 							</time>
 							<?php
@@ -271,9 +233,4 @@ endif;
 			</tbody>
 		</table>
 	</div>
-	<?php
-	if ( $id && $show_all_events_link ) {
-		echo '<div class="sp-calendar-link sp-view-all-link"><a href="' . esc_url( get_permalink( $id ) ) . '">' . esc_attr__( 'View all events', 'sportspress' ) . '</a></div>';
-	}
-	?>
 </div>

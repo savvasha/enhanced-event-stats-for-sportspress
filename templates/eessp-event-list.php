@@ -12,25 +12,18 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $defaults = array(
-	'id'                   => null,
+	'current_event_date'   => false,
 	'title'                => false,
-	'status'               => 'default',
+	'status'               => 'publish',
 	'format'               => 'default',
 	'date'                 => 'default',
-	'date_from'            => 'default',
-	'date_to'              => 'default',
-	'date_past'            => 'default',
-	'date_future'          => 'default',
-	'date_relative'        => 'default',
 	'day'                  => 'default',
-	'league'               => null,
-	'season'               => null,
+	'leagues'              => null,
+	'seasons'              => null,
 	'venue'                => null,
-	'team'                 => null,
-	'teams_past'           => null,
-	'date_before'          => null,
+	'team'                 => false,
 	'player'               => null,
-	'number'               => -1,
+	'number'               => get_option( 'eessp_form_guide_rows', 3 ),
 	'show_team_logo'       => get_option( 'sportspress_event_list_show_logos', 'no' ) == 'yes' ? true : false,
 	'link_events'          => get_option( 'sportspress_link_events', 'yes' ) == 'yes' ? true : false,
 	'link_teams'           => get_option( 'sportspress_link_teams', 'no' ) == 'yes' ? true : false,
@@ -49,61 +42,48 @@ $defaults = array(
 );
 
 extract( $defaults, EXTR_SKIP );
-//var_dump($current_event_date);
-$calendar = new SP_Calendar( $id );
-if ( $status != 'default' ) {
-	$calendar->status = $status;
-}
-if ( $format != 'default' ) {
-	$calendar->event_format = $format;
-}
-if ( $date != 'default' ) {
-	$calendar->date = $date;
-}
-if ( $date_from != 'default' ) {
-	$calendar->from = $date_from;
-}
-if ( $date_to != 'default' ) {
-	$calendar->to = $date_to;
-}
-if ( $date_past != 'default' ) {
-	$calendar->past = $date_past;
-}
-if ( $date_future != 'default' ) {
-	$calendar->future = $date_future;
-}
-if ( $date_relative != 'default' ) {
-	$calendar->relative = $date_relative;
-}
-if ( $league ) {
-	$calendar->league = $league;
-}
-if ( $season ) {
-	$calendar->season = $season;
-}
-if ( $venue ) {
-	$calendar->venue = $venue;
-}
+
+$args = array(
+		'post_type'      => 'sp_event',
+		'posts_per_page' => $number,
+		'post_status'    => $status,
+		'order'          => 'DESC',
+		'meta_query'     => array(
+			'relation' => 'AND',
+		),
+		'tax_query'      => array(
+			'relation' => 'AND',
+		),
+	);
 if ( $team ) {
-	$calendar->team = $team;
+	$args['meta_query'][] = array(
+		'key'     => 'sp_team',
+		'value'   => array( $team ),
+		'compare' => 'IN',
+	);
 }
-if ( $teams_past ) {
-	$calendar->teams_past = $teams_past;
+if ( $current_event_date ) {
+	$args['date_query'] = array(
+		array(
+			'before'    => $current_event_date,
+			'inclusive' => false,
+		),
+	);
 }
-if ( $date_before ) {
-	$calendar->date_before = $date_before;
+if ( !is_null( $leagues ) ) {
+	$args['tax_query'][] = array(
+			'taxonomy' => 'sp_league',
+			'field'    => 'term_id',
+			'terms'    => $leagues,
+		);
 }
-if ( $player ) {
-	$calendar->player = $player;
+if ( !is_null( $seasons ) ) {
+	$args['tax_query'][] = array(
+			'taxonomy' => 'sp_season',
+			'field'    => 'term_id',
+			'terms'    => $seasons,
+		);
 }
-if ( $order != 'default' ) {
-	$calendar->order = $order;
-}
-if ( $day != 'default' ) {
-	$calendar->day = $day;
-}
-$data       = $calendar->data();
-$usecolumns = $calendar->columns;
 
 if ( isset( $columns ) ) :
 	if ( is_array( $columns ) ) {
@@ -113,17 +93,10 @@ if ( isset( $columns ) ) :
 	}
 endif;
 
-if ( $show_title && false === $title && $id ) :
-	$caption = $calendar->caption;
-	if ( $caption ) {
-		$title = $caption;
-	} else {
-		$title = get_the_title( $id );
-	}
-endif;
+// Get all events based on given args.
+$data = get_posts( $args );
+
 $labels = array();
-// Create a unique identifier based on the current time in microseconds
-$identifier = uniqid( 'eventlist_' );
 ?>
 <div class="sp-template sp-template-event-list">
 	<?php if ( $title ) { ?>
@@ -216,7 +189,7 @@ $identifier = uniqid( 'eventlist_' );
 					if ( sp_column_active( $usecolumns, 'venue' ) ) {
 						echo '<th class="data-venue">' . esc_attr__( 'Venue', 'sportspress' ) . '</th>';
 					} else {
-						echo '<th style="display:none;" class="data-venue">' . esc_attr__( 'Venue', 'sportspress' ) . '</th>';
+						echo '<th hidden style="display:none;" class="data-venue">' . esc_attr__( 'Venue', 'sportspress' ) . '</th>';
 					}
 
 					if ( sp_column_active( $usecolumns, 'article' ) ) {
@@ -314,7 +287,7 @@ $identifier = uniqid( 'eventlist_' );
 
 						echo '<td class="data-date" itemprop="startDate" content="' . esc_attr( mysql2date( 'Y-m-d\TH:i:sP', $event->post_date ) ) . '" data-label="' . esc_attr__( 'Date', 'sportspress' ) . '">' . wp_kses( $date_html, array( 'a' => array( 'href' => array(), 'itemprop' => array() ), 'date' => array() ) ) . '</td>';
 
-						// Check if the reverse_teams option is selected and alter the teams order
+					// Check if the reverse_teams option is selected and alter the teams order.
 					if ( $reverse_teams ) {
 						$teams_array = array_reverse( $teams_array, true );
 					}
@@ -493,15 +466,15 @@ $identifier = uniqid( 'eventlist_' );
 									echo wp_kses_post( implode( ', ', wp_list_pluck( $venues, 'name' ) ) );
 								endif;
 							endif;
-							echo '</div>';
-							echo '</td>';
-						else :
-							echo '<td style="display:none;" class="data-venue" data-label="' . esc_attr__( 'Venue', 'sportspress' ) . '" itemprop="location" itemscope itemtype="http://schema.org/Place">';
-							echo '<div itemprop="address" itemscope itemtype="http://schema.org/PostalAddress">';
-							esc_attr_e( 'N/A', 'sportspress' );
-							echo '</div>';
-							echo '</td>';
-						endif;
+						echo '</div>';
+						echo '</td>';
+					else :
+						echo '<td hidden style="display:none;" class="data-venue" data-label="' . esc_attr__( 'Venue', 'sportspress' ) . '" itemprop="location" itemscope itemtype="http://schema.org/Place">';
+						echo '<div itemprop="address" itemscope itemtype="http://schema.org/PostalAddress">';
+						esc_attr_e( 'N/A', 'sportspress' );
+						echo '</div>';
+						echo '</td>';
+					endif;
 
 						if ( sp_column_active( $usecolumns, 'article' ) ) :
 							echo '<td class="data-article" data-label="' . esc_attr__( 'Article', 'sportspress' ) . '">';
@@ -549,13 +522,4 @@ $identifier = uniqid( 'eventlist_' );
 			</tbody>
 		</table>
 	</div>
-	<?php
-	// If responsive tables are enabled then load the inline css code
-	if ( $responsive ) {
-		// sportspress_responsive_tables_css( $identifier );
-	}
-	if ( $id && $show_all_events_link ) {
-		echo '<div class="sp-calendar-link sp-view-all-link"><a href="' . esc_url( get_permalink( $id ) ) . '">' . esc_attr__( 'View all events', 'sportspress' ) . '</a></div>';
-	}
-	?>
 </div>
