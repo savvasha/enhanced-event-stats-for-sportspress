@@ -53,7 +53,19 @@ function eessp_css_front_styles_scripts() {
  * @return void
  */
 function eessp_css_admin_styles_scripts() {
-	wp_enqueue_script( 'eessp-admin-js', EESSP_PLUGIN_URL . 'assets/js/eessp_admin.js', array( 'jquery' ), '1.0', true );
+	if ( 'toplevel_page_sportspress' === get_current_screen()->id ){
+		wp_register_script( 'eessp-admin-js', '', array( 'jquery' ), '1.0', true );
+		wp_enqueue_script( 'eessp-admin-js'  );
+		wp_add_inline_script( 
+			'eessp-admin-js', 
+			"jQuery(document).ready(function($) {
+				// Disable the 'premierleague' option
+				$('#eessp_form_guide_layout option[value=\'premierleague\']').attr('disabled', 'disabled');
+				// Disable the 'premierleaguealt' option
+				$('#eessp_form_guide_layout option[value=\'premierleaguealt\']').attr('disabled', 'disabled');
+			});"
+		);
+	}
 }
 
 /**
@@ -116,7 +128,6 @@ function eessp_add_settings( $settings ) {
 			),
 		)
 	);
-	var_dump($settings);
 	return $settings;
 }
 
