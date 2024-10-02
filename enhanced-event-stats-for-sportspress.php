@@ -33,7 +33,7 @@ if ( ! defined( 'EESSP_PLUGIN_URL' ) ) {
 add_filter( 'sportspress_event_templates', 'eessp_event_templates' );
 add_action( 'wp_enqueue_scripts', 'eessp_css_front_styles_scripts' );
 add_action( 'admin_enqueue_scripts', 'eessp_css_admin_styles_scripts' );
-add_filter( 'sportspress_event_settings', 'eessp_add_settings' );
+add_filter( 'sportspress_event_settings', 'eessp_add_settings', 50 );
 
 /**
  * Add CSS styles and scripts to frontend event pages only.
@@ -90,10 +90,10 @@ function eessp_add_settings( $settings ) {
 					'id'      => 'eessp_form_guide_layout',
 					'type'    => 'select',
 					'options' => $eessp_form_guide_templates,
-					'custom_attributes' => array(
-						'premierleague' => 'disabled',    // Add custom attribute for the specific option
-						'premierleaguealt' => 'disabled', // Add custom attribute for the specific option
-					),
+					'custom_attributes' => apply_filters( 'eessp_form_guide_custom_atts', array(
+															'premierleague' => 'disabled',    // Add custom attribute for the specific option
+															'premierleaguealt' => 'disabled', // Add custom attribute for the specific option
+														) ),
 				),
 				array(
 					'title'             => esc_attr__( 'Limit', 'sportspress' ),
@@ -116,6 +116,7 @@ function eessp_add_settings( $settings ) {
 			),
 		)
 	);
+	var_dump($settings);
 	return $settings;
 }
 
