@@ -160,10 +160,11 @@ function eessp_output_form_guide() {
 	$leagues   = sp_get_leagues( $event_id );
 	$seasons   = sp_get_seasons( $event_id );
 	$form_guides = array();
+	$turn        = 0; // Add an iteration var to use later on.
 
 	foreach ( $teams as $team ) {
 		ob_start();
-
+		
 		switch ( $format ) {
 			case 'blocks':
 				sp_get_template(
@@ -207,9 +208,10 @@ function eessp_output_form_guide() {
 				break;
 
 			default:
-				do_action( 'eessp_form_guide_cases', $event_id, $team, $format );
+				do_action( 'eessp_form_guide_cases', $event_id, $team, $format, $turn );
 				break;
 		}
+		$turn++;
 
 		$form_guides[] = ob_get_clean();
 	}
