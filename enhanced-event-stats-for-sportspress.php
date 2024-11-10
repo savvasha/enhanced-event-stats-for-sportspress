@@ -84,12 +84,12 @@ function eessp_add_settings( $settings ) {
 										'premierleaguealt' => 'Premier League Alternative (PRO only)', 
 									) );
 	
-	// Merge SportsPress Event Settings with additional Event Summary options.
+	// Merge SportsPress Event Settings with additional options.
 	$settings = array_merge(
 		$settings,
 		array(
 			array(
-				'title' => __( 'Enhanced Event Stats', 'eessp' ),
+				'title' => __( 'Enhanced Event Stats', 'enhanced-event-stats-for-sportspress' ),
 				'type'  => 'title',
 				'id'    => 'eessp_enhanced_events_options',
 			),
@@ -98,7 +98,7 @@ function eessp_add_settings( $settings ) {
 			'eessp_enhanced_events_options',
 			array(
 				array(
-					'title'   => __( 'Form Guide Layout', 'eessp' ),
+					'title'   => __( 'Form Guide Layout', 'enhanced-event-stats-for-sportspress' ),
 					'id'      => 'eessp_form_guide_layout',
 					'type'    => 'select',
 					'options' => $eessp_form_guide_templates,
@@ -139,7 +139,7 @@ function eessp_add_settings( $settings ) {
  */
 function eessp_event_templates( $templates = array() ) {
 	$templates['eessp_form_guide'] = array(
-		'title'   => __( 'Form Guide', 'eessp' ),
+		'title'   => __( 'Form Guide', 'enhanced-event-stats-for-sportspress' ),
 		'option'  => 'sportspress_event_show_eessp_form_guide',
 		'action'  => 'eessp_output_form_guide',
 		'default' => 'yes',
